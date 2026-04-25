@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: legacy-wallet-frontend
+    runtime: static
+    rootDir: .
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VITE_BACKEND_URL
+        value: ""

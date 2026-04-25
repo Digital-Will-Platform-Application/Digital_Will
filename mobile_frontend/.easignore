@@ -1,0 +1,51 @@
+# EAS upload rules (replaces .gitignore for the archive when this file exists).
+# Keep in sync with mobile_frontend/.gitignore, then allow `.env` for cloud builds — see end of file.
+
+# Mirrored from mobile_frontend/.gitignore — https://docs.expo.dev/build-reference/easignore/
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files (we re-include `.env` below for EAS only)
+.env
+.env.*
+!.env.example
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
+
+# --- EAS-only: ship `.env` so cloud builds see EXPO_PUBLIC_* (still gitignored locally).
+# Use ONLY EXPO_PUBLIC_* and non-secret app config here — never DATABASE_URL or JWT_SECRET.
+!.env

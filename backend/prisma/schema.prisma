@@ -1,0 +1,162 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model asset_allocations {
+  id                   Int       @id @default(autoincrement())
+  asset_id             Int
+  recipient_id         Int
+  allocation_percentage Decimal   @db.Decimal(5, 2)
+  notes                String?
+  created_at           DateTime?  @default(now()) @db.Timestamp(6)
+  updated_at           DateTime?  @default(now()) @db.Timestamp(6)
+
+  assets      assets      @relation(fields: [asset_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  recipients  recipients  @relation(fields: [recipient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([asset_id, recipient_id], map: "asset_allocations_asset_id_recipient_id_key")
+  @@index([asset_id], map: "idx_asset_allocations_asset_id")
+  @@index([recipient_id], map: "idx_asset_allocations_recipient_id")
+}
+
+model assets {
+  id              Int       @id @default(autoincrement())
+  user_id         Int
+  name            String    @db.VarChar(255)
+  category        String    @default("other") @db.VarChar(50)
+  estimated_value Decimal?  @db.Decimal(15, 2)
+  description     String?
+  currency        String?   @default("USD") @db.VarChar(10)
+  documents_url   String?
+  created_at      DateTime? @default(now()) @db.Timestamp(6)
+  updated_at      DateTime? @default(now()) @db.Timestamp(6)
+  users           users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  asset_allocations asset_allocations[]
+
+  @@index([category], map: "idx_assets_category")
+  @@index([user_id], map: "idx_assets_user_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model chat_messages {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  will_id    Int?
+  role       String    @db.VarChar(20)
+  content    String
+  audio_url  String?
+  video_url  String?
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  wills      wills?    @relation(fields: [will_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at], map: "idx_chat_messages_created_at")
+  @@index([user_id], map: "idx_chat_messages_user_id")
+  @@index([will_id], map: "idx_chat_messages_will_id")
+}
+
+model email_notifications {
+  id              Int       @id @default(autoincrement())
+  will_id         Int
+  recipient_email String    @db.VarChar(255)
+  recipient_name  String?   @db.VarChar(255)
+  subject         String    @db.VarChar(255)
+  status          String    @default("pending") @db.VarChar(50)
+  sent_at         DateTime? @db.Timestamp(6)
+  error_message   String?
+  created_at      DateTime? @default(now()) @db.Timestamp(6)
+  wills           wills     @relation(fields: [will_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([status], map: "idx_email_notifications_status")
+  @@index([will_id], map: "idx_email_notifications_will_id")
+}
+
+model email_verifications {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  email       String    @db.VarChar(255)
+  token       String    @unique @db.VarChar(255)
+  expires_at  DateTime  @db.Timestamp(6)
+  verified_at DateTime? @db.Timestamp(6)
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  users       users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([email], map: "idx_email_verifications_email")
+  @@index([token], map: "idx_email_verifications_token")
+  @@index([user_id], map: "idx_email_verifications_user_id")
+}
+
+model recipients {
+  id                Int       @id @default(autoincrement())
+  user_id           Int
+  full_name         String    @db.VarChar(255)
+  email             String?   @db.VarChar(255)
+  phone             String?   @db.VarChar(50)
+  relationship      String?   @db.VarChar(100)
+  address           String?
+  is_verified       Boolean?  @default(false)
+  verification_code String?   @db.VarChar(50)
+  image_url         String?
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
+  users             users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  asset_allocations asset_allocations[]
+
+  @@index([email], map: "idx_recipients_email")
+  @@index([is_verified], map: "idx_recipients_is_verified")
+  @@index([user_id], map: "idx_recipients_user_id")
+}
+
+model users {
+  id                  Int                   @id @default(autoincrement())
+  username            String                @unique @db.VarChar(100)
+  email               String                @unique @db.VarChar(255)
+  mobile              String?               @db.VarChar(20)
+  password            String                @db.VarChar(255)
+  address1            String?               @db.VarChar(255)
+  address2            String?               @db.VarChar(255)
+  age                 Int?
+  gender              String?               @db.VarChar(20)
+  state               String?               @db.VarChar(100)
+  postal_code         String?               @db.VarChar(20)
+  created_at          DateTime?             @default(now()) @db.Timestamp(6)
+  updated_at          DateTime?             @default(now()) @db.Timestamp(6)
+  avatar_url          String?
+  is_secondary_admin  Boolean               @default(false)
+  assets              assets[]
+  chat_messages       chat_messages[]
+  email_verifications email_verifications[]
+  recipients          recipients[]
+  wills               wills[]
+
+  @@index([email], map: "idx_users_email")
+  @@index([is_secondary_admin], map: "idx_users_is_secondary_admin", where: raw("(is_secondary_admin = true)"))
+  @@index([username], map: "idx_users_username")
+}
+
+model wills {
+  id                  Int                   @id @default(autoincrement())
+  user_id             Int
+  title               String                @default("My Will") @db.VarChar(255)
+  type                String                @default("chat") @db.VarChar(50)
+  status              String                @default("draft") @db.VarChar(50)
+  content             String?
+  transcript          String?
+  audio_url           String?
+  video_url           String?
+  notes               String?
+  created_at          DateTime?             @default(now()) @db.Timestamp(6)
+  updated_at          DateTime?             @default(now()) @db.Timestamp(6)
+  chat_messages       chat_messages[]
+  email_notifications email_notifications[]
+  users               users                 @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([status], map: "idx_wills_status")
+  @@index([type], map: "idx_wills_type")
+  @@index([user_id], map: "idx_wills_user_id")
+}

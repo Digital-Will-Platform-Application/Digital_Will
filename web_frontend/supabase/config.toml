@@ -1,0 +1,13 @@
+project_id = "xagonodpwvhhrypnolif"
+
+# Authentication Security Configuration
+# 
+# Leaked Password Protection:
+# - Client-side protection is implemented using Have I Been Pwned API
+# - See src/lib/passwordSecurity.ts for implementation details
+# - To enable server-side protection in Supabase Dashboard:
+#   1. Go to Authentication → Policies → Password
+#   2. Enable "Check passwords against Have I Been Pwned"
+#   3. Configure breach threshold if needed
+# 
+# See AUTH_SECURITY.md for detailed documentation

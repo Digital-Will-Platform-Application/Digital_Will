@@ -1,0 +1,34 @@
+services:
+  # Backend API Service
+  - type: web
+    name: legacy-wallet-backend
+    runtime: node
+    rootDir: .
+    buildCommand: cd backend && npm ci
+    startCommand: cd backend && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      # In the Render dashboard for this service, also set:
+      # DATABASE_URL, JWT_SECRET
+      # Email (pick one): RESEND_API_KEY (+ optional RESEND_FROM after domain verify)
+      #   or SMTP_USER, SMTP_PASS, SMTP_HOST, SMTP_PORT
+      # FRONTEND_URL = your static site URL (verification links in emails)
+
+  # Frontend Web Service
+  - type: web
+    name: legacy-wallet-frontend
+    runtime: static
+    rootDir: .
+    buildCommand: cd web_frontend && npm ci && npm run build
+    staticPublishPath: web_frontend/dist
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Set this to your backend Render URL after deploy, e.g.
+      # https://<your-node-backend>.onrender.com  (web service, not static site)
+      - key: VITE_BACKEND_URL
+        value: ""

@@ -1,0 +1,119 @@
+/**
+ * Tailwind-style responsive utilities for mobile
+ * Use these classes for layout adaptation without changing JS/TS.
+ */
+
+/* Fluid widths */
+.w-full-mobile {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .w-full-mobile {
+    width: auto;
+  }
+}
+
+/* Stack columns on mobile */
+.flex-col-mobile {
+  flex-direction: column;
+}
+
+@media (min-width: 640px) {
+  .flex-col-mobile {
+    flex-direction: row;
+  }
+}
+
+/* Hide on small mobile only */
+@media (max-width: 479px) {
+  .hide-xs {
+    display: none !important;
+  }
+}
+
+/* Show only on small mobile */
+.show-xs {
+  display: none !important;
+}
+
+@media (max-width: 479px) {
+  .show-xs {
+    display: block !important;
+  }
+}
+
+@media (max-width: 479px) {
+  .show-xs-inline {
+    display: inline !important;
+  }
+}
+
+/* Touch target padding (use on clickable areas) */
+.touch-target {
+  padding: 0.75rem 1rem;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+@media (min-width: 768px) {
+  .touch-target {
+    padding: 0.5rem 0.75rem;
+    min-height: auto;
+    min-width: auto;
+  }
+}
+
+/* Prevent text overflow on mobile */
+.truncate-mobile {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  .truncate-mobile {
+    white-space: normal;
+  }
+}
+
+/* Safe area padding for fixed headers/footers */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.safe-left {
+  padding-left: env(safe-area-inset-left, 0);
+}
+
+.safe-right {
+  padding-right: env(safe-area-inset-right, 0);
+}
+
+/* Minimum tap area for links/buttons (accessibility) */
+.min-tap {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Contain content on all mobile viewports – no overflow */
+@media (max-width: 767px) {
+  .contain-mobile {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .text-balance-mobile {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+}

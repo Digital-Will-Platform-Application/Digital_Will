@@ -1,0 +1,261 @@
+/**
+ * Mobile-responsive base styles – all mobile devices
+ * Breakpoints: 320px, 360px, 375px, 414px, 480px, 768px
+ * Ensures no horizontal scroll; fonts and sizing scale for every screen.
+ */
+
+/* Global: prevent any element from causing horizontal overflow */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Fluid base font: 14px on 320px → 16px at 768px */
+  font-size: clamp(14px, 2.5vw + 8px, 16px);
+}
+
+body {
+  overflow-x: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Safe area for notched devices (iPhone X+, Android notch) */
+@supports (padding: env(safe-area-inset-top)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+#root {
+  width: 100%;
+  max-width: 100vw;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+@media (max-width: 767px) {
+  #root {
+    max-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+    text-align: left;
+  }
+}
+
+/* ========== Container padding: scale for all mobile widths ========== */
+.container {
+  width: 100%;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 319px) {
+  .container {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+@media (min-width: 320px) and (max-width: 359px) {
+  .container {
+    padding-left: 0.625rem;
+    padding-right: 0.625rem;
+  }
+}
+
+@media (min-width: 360px) and (max-width: 389px) {
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+@media (min-width: 390px) and (max-width: 479px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+@media (min-width: 480px) and (max-width: 767px) {
+  .container {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+/* ========== Typography: scale for all mobile widths ========== */
+@media (max-width: 767px) {
+  body {
+    font-size: clamp(14px, 4vw, 16px);
+  }
+
+  .heading-section {
+    font-size: clamp(1.125rem, 5vw, 1.5rem);
+    line-height: 1.3;
+    word-wrap: break-word;
+  }
+
+  .heading-display {
+    font-size: clamp(1.5rem, 6vw, 2rem);
+    line-height: 1.25;
+    word-wrap: break-word;
+  }
+
+  /* Scale down large text so it stays within screen */
+  h1 {
+    font-size: clamp(1.25rem, 5vw, 1.5rem);
+    line-height: 1.3;
+  }
+  h2 {
+    font-size: clamp(1.125rem, 4vw, 1.375rem);
+    line-height: 1.3;
+  }
+  h3, h4 {
+    font-size: clamp(1rem, 3.5vw, 1.125rem);
+  }
+}
+
+/* Very small phones (320px–359px) */
+@media (max-width: 359px) {
+  .heading-section {
+    font-size: 1.125rem;
+  }
+  .heading-display {
+    font-size: 1.375rem;
+  }
+  h1 { font-size: 1.25rem; }
+  h2 { font-size: 1.125rem; }
+}
+
+/* ========== Touch-friendly controls (all touch devices) ========== */
+@media (pointer: coarse) {
+  button:not([class*="size-"]),
+  [role="button"],
+  a[href] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  input:not([type="hidden"]),
+  select,
+  textarea {
+    min-height: 44px;
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+}
+
+/* ========== Prevent overflow: images, media, flex children ========== */
+img,
+video,
+audio,
+iframe,
+object,
+embed,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 767px) {
+  [class*="flex"] > *,
+  [class*="grid"] > * {
+    min-width: 0;
+  }
+
+  .card-elevated,
+  [class*="Card"],
+  [class*="card"] {
+    max-width: 100%;
+    overflow: hidden;
+  }
+}
+
+/* ========== Tables: scroll inside card only ========== */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+/* ========== Mobile stack utility ========== */
+.mobile-stack {
+  flex-direction: column;
+}
+
+@media (min-width: 640px) {
+  .mobile-stack {
+    flex-direction: row;
+  }
+}
+
+/* ========== Dashboard analytics: keep charts inside cards ========== */
+@media (max-width: 385px) {
+  .dashboard-analytics-card .chart-container-mobile {
+    max-height: 160px;
+  }
+  .dashboard-analytics-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard-analytics-card [data-chart] {
+    overflow: hidden;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .dashboard-analytics-card [data-chart] .recharts-responsive-container {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  .dashboard-analytics-card [data-chart] .recharts-wrapper {
+    max-width: 100%;
+  }
+}
+
+/* ========== Global: no element wider than viewport on mobile ========== */
+@media (max-width: 767px) {
+  main,
+  section,
+  article,
+  header,
+  footer,
+  nav,
+  aside,
+  [class*="container"],
+  [class*="max-w"] {
+    max-width: 100vw;
+  }
+
+  /* Buttons and inputs full width on very small screens when in column layout */
+  @media (max-width: 359px) {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    select,
+    textarea {
+      width: 100%;
+      max-width: 100%;
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "digital-will-cursor-workspace",
+  "private": true,
+  "description": "Small helper folder only. Double-click Open-full-project.cmd here, OR open ../digital-will.code-workspace from the parent folder, OR File → Open Folder → parent Digital-will-main (contains mobile_frontend).",
+  "scripts": {
+    "build:android:preview": "node ../mobile_frontend/scripts/eas-android-build.mjs preview",
+    "build:android:production": "node ../mobile_frontend/scripts/eas-android-build.mjs production",
+    "build:configure": "node ../mobile_frontend/node_modules/eas-cli/bin/run build:configure",
+    "eas:init": "node ../mobile_frontend/node_modules/eas-cli/bin/run init",
+    "mobile:start": "node ../mobile_frontend/node_modules/expo/bin/cli start"
+  }
+}
