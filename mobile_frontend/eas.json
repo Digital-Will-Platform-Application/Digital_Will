@@ -7,6 +7,9 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://digital-will-gvx6.onrender.com"
+      },
       "android": {
         "buildType": "apk",
         "image": "latest"
@@ -17,6 +20,9 @@
     },
     "preview": {
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://digital-will-gvx6.onrender.com"
+      },
       "android": {
         "buildType": "apk",
         "image": "latest"
@@ -27,6 +33,9 @@
       }
     },
     "production": {
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://digital-will-gvx6.onrender.com"
+      },
       "android": {
         "buildType": "apk",
         "image": "latest"
