@@ -189,7 +189,21 @@ export default function AssetsManageScreen() {
           documents_url: (a as { documents_url?: string | null }).documents_url ?? null,
         })),
       );
-      setAllocations([]);
+      const allocRows = await backendApi
+        .listAssetAllocations(userId)
+        .then((r) => r.data ?? [])
+        .catch(() => []);
+      // allocations endpoint may include recipient join on some backends; keep it optional.
+      setAllocations(
+        allocRows.map((a: any) => ({
+          id: String(a.id),
+          asset_id: String(a.asset_id),
+          recipient_id: String(a.recipient_id),
+          recipient: a.recipient && typeof a.recipient === 'object'
+            ? { full_name: String((a.recipient as any).full_name ?? '') }
+            : undefined,
+        })),
+      );
     } catch (e) {
       console.error(e);
     } finally {

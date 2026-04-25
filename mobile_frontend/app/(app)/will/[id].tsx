@@ -1,13 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useThemedStyles } from '@/lib/useThemedStyles';
-import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { backendApi } from '@/lib/backendApi';
 import { typography, radius } from '@/lib/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
+import { Audio, Video, ResizeMode } from 'expo-av';
 
-type Will = { id: string; title: string; status: string; type: string; content: string | null; transcript: string | null; notes: string | null };
+type Will = {
+  id: string;
+  title: string;
+  status: string;
+  type: string;
+  content: string | null;
+  transcript: string | null;
+  notes: string | null;
+  audio_url?: string | null;
+  video_url?: string | null;
+};
 
 export default function WillDetailScreen() {
   const { colors } = useAppTheme();
@@ -32,6 +43,8 @@ export default function WillDetailScreen() {
   const router = useRouter();
   const [will, setWill] = useState<Will | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
 
   useEffect(() => {
     if (!id || !user) return;
@@ -57,6 +70,8 @@ export default function WillDetailScreen() {
             content: w.content,
             transcript: w.transcript,
             notes: w.notes,
+            audio_url: w.audio_url,
+            video_url: w.video_url,
           });
         }
       } catch {
@@ -66,6 +81,33 @@ export default function WillDetailScreen() {
       }
     })();
   }, [id, user]);
+
+  useEffect(() => {
+    return () => {
+      if (sound) sound.unloadAsync().catch(() => {});
+    };
+  }, [sound]);
+
+  const playAudio = async () => {
+    if (!will?.audio_url) return;
+    try {
+      setIsPlayingAudio(true);
+      if (sound) {
+        await sound.unloadAsync();
+        setSound(null);
+      }
+      const res = await Audio.Sound.createAsync({ uri: will.audio_url }, { shouldPlay: true });
+      setSound(res.sound);
+      res.sound.setOnPlaybackStatusUpdate((st) => {
+        if (!st.isLoaded) return;
+        if (st.didJustFinish) setIsPlayingAudio(false);
+      });
+    } catch (e) {
+      console.error(e);
+      setIsPlayingAudio(false);
+      Alert.alert('Error', 'Could not play audio.');
+    }
+  };
 
   if (loading) {
     return (
@@ -93,6 +135,21 @@ export default function WillDetailScreen() {
       </Pressable>
       <Text style={styles.title}>{will.title || 'Untitled'}</Text>
       <Text style={styles.meta}>{will.status} · {will.type}</Text>
+      {will.audio_url ? (
+        <Pressable style={styles.button} onPress={playAudio} disabled={isPlayingAudio}>
+          <Text style={styles.buttonText}>{isPlayingAudio ? 'Playing…' : 'Play Audio'}</Text>
+        </Pressable>
+      ) : null}
+      {will.video_url ? (
+        <View style={{ width: '100%', aspectRatio: 16 / 9, marginBottom: 24, borderRadius: 12, overflow: 'hidden' }}>
+          <Video
+            source={{ uri: will.video_url }}
+            style={{ width: '100%', height: '100%' }}
+            useNativeControls
+            resizeMode={ResizeMode.CONTAIN}
+          />
+        </View>
+      ) : null}
       {(will.content || will.transcript) && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Content</Text>

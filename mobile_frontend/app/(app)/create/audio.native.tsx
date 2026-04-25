@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useThemedStyles } from '@/lib/useThemedStyles';
-import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Alert, Platform, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
@@ -108,8 +108,8 @@ export default function CreateAudioWillScreen() {
           shouldDuckAndroid: true,
           playThroughEarpieceAndroid: false,
         });
-        const { status } = await Audio.requestPermissionsAsync();
-        if (status !== 'granted') setPermError('Microphone permission is required to record.');
+        const perm = await Audio.requestPermissionsAsync();
+        if (perm.status !== 'granted') setPermError('Microphone permission is required to record.');
       } catch (e) {
         setPermError('Could not set up audio.');
       }
@@ -143,13 +143,34 @@ export default function CreateAudioWillScreen() {
   };
 
   const handleStartRecording = async () => {
-    if (permError || isSaving) return;
+    if (isSaving) return;
     try {
+      const perm = await Audio.getPermissionsAsync();
+      if (perm.status !== 'granted') {
+        const req = await Audio.requestPermissionsAsync();
+        if (req.status !== 'granted') {
+          setPermError('Microphone permission is required to record.');
+          Alert.alert(
+            'Permission required',
+            'Please allow microphone permission to record your audio will.',
+            [{ text: 'Open Settings', onPress: () => Linking.openSettings() }, { text: 'OK' }],
+          );
+          return;
+        }
+        setPermError(null);
+      }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
       const { recording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
       recordingRef.current = recording;
-      await recording.startAsync();
       setIsRecording(true);
       setIsPaused(false);
       setRecordingTime(0);

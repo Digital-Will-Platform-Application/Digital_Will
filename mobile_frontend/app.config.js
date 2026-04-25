@@ -16,9 +16,9 @@ const DEFAULT_PUBLIC_BACKEND_URL = 'https://legacy-wallet-backend.onrender.com';
 
 const resolvedBackendUrl = (() => {
   const raw = (process.env.EXPO_PUBLIC_BACKEND_URL || '').trim().replace(/\/+$/, '');
-  if (raw) return raw;
-  if (process.env.EAS_BUILD === 'true') return DEFAULT_PUBLIC_BACKEND_URL;
-  return '';
+  // Always provide a usable backend URL on devices (empty/localhost breaks release APKs).
+  // Prefer env when present; otherwise fall back to the hosted backend.
+  return raw || DEFAULT_PUBLIC_BACKEND_URL;
 })();
 
 export default {
@@ -34,11 +34,24 @@ export default {
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     splash: { image: './assets/images/splash-icon.png', resizeMode: 'contain', backgroundColor: '#FAF9F7' },
-    ios: { supportsTablet: true },
+    ios: {
+      supportsTablet: true,
+      infoPlist: {
+        NSMicrophoneUsageDescription: 'Digital Will needs microphone access to record your audio will.',
+        NSCameraUsageDescription: 'Digital Will needs camera access to record your video will.',
+        NSPhotoLibraryAddUsageDescription: 'Digital Will saves your recordings to your device when needed.',
+      },
+    },
     android: {
       adaptiveIcon: { foregroundImage: './assets/images/adaptive-icon.png', backgroundColor: '#FAF9F7' },
       edgeToEdgeEnabled: true,
-      package: 'com.digitalwill.legacywallet'
+      package: 'com.digitalwill.legacywallet',
+      permissions: [
+        'RECORD_AUDIO',
+        'CAMERA',
+        'READ_EXTERNAL_STORAGE',
+        'WRITE_EXTERNAL_STORAGE',
+      ],
     },
     web: { bundler: 'metro', output: 'static', favicon: './assets/images/favicon.png' },
     plugins: [
@@ -51,6 +64,7 @@ export default {
           sounds: [],
         },
       ],
+      'expo-camera',
     ],
     experiments: { typedRoutes: true },
     extra: {

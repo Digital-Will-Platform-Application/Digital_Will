@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { typography, radius } from '@/lib/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { Screen } from '@/components/ui/Screen';
+import { Audio, Video, ResizeMode } from 'expo-av';
 
 interface Will {
   id: string;
@@ -137,6 +138,10 @@ export default function ReviewWillScreen() {
     transcriptSection: { marginTop: 12 },
     transcriptLabel: { fontSize: 14, color: colors.mutedForeground, marginBottom: 4 },
     transcriptText: { fontSize: 14, color: colors.foreground, backgroundColor: colors.secondary, padding: 12, borderRadius: 8, lineHeight: 20 },
+    mediaRow: { marginTop: 12, gap: 10 },
+    mediaBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 12, borderRadius: radius.button, backgroundColor: colors.secondary, borderWidth: 1, borderColor: colors.border },
+    mediaBtnText: { color: colors.foreground, fontWeight: '600' },
+    videoBox: { width: '100%', aspectRatio: 16 / 9, backgroundColor: colors.secondary, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: colors.border },
   
     emptySection: { alignItems: 'center', paddingVertical: 24 },
     emptyText: { fontSize: 14, color: colors.mutedForeground, marginBottom: 12, textAlign: 'center' },
@@ -231,6 +236,8 @@ export default function ReviewWillScreen() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [allocations, setAllocations] = useState<Allocation[]>([]);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const audioSoundRef = useState<Audio.Sound | null>(null);
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     will: true,
@@ -240,6 +247,13 @@ export default function ReviewWillScreen() {
 
   useEffect(() => {
     if (user) fetchData();
+    return () => {
+      // cleanup audio playback between navigations
+      const snd = audioSoundRef[0];
+      if (snd) {
+        snd.unloadAsync().catch(() => {});
+      }
+    };
   }, [user]);
 
   const fetchData = async () => {
@@ -253,10 +267,11 @@ export default function ReviewWillScreen() {
       return;
     }
     try {
-      const [wRes, aRes, rRes] = await Promise.all([
+      const [wRes, aRes, rRes, allocRes] = await Promise.all([
         backendApi.listWills({ user_id: userId }),
         backendApi.getUserAssets(userId),
         backendApi.getRecipientsByEmail(user.email),
+        backendApi.listAssetAllocations(userId).catch(() => ({ success: false, data: [] as any[] })),
       ]);
       const wRows = wRes.data ?? [];
       const latest = wRows[0];
@@ -296,7 +311,14 @@ export default function ReviewWillScreen() {
           is_verified: Boolean(r.is_verified),
         })),
       );
-      setAllocations([]);
+      setAllocations(
+        ((allocRes as any).data ?? []).map((a: any) => ({
+          id: String(a.id),
+          asset_id: String(a.asset_id),
+          recipient_id: String(a.recipient_id),
+          allocation_percentage: Number(a.allocation_percentage) || 0,
+        })),
+      );
     } catch (error) {
       console.error('Error fetching data:', error);
       Alert.alert('Error', 'Failed to load will data');
@@ -352,6 +374,28 @@ export default function ReviewWillScreen() {
 
   const getAssetAllocations = (assetId: string) => {
     return allocations.filter((a) => a.asset_id === assetId);
+  };
+
+  const playAudio = async () => {
+    if (!will?.audio_url) return;
+    try {
+      setIsPlayingAudio(true);
+      const current = audioSoundRef[0];
+      if (current) {
+        await current.unloadAsync();
+        (audioSoundRef as any)[1](null);
+      }
+      const { sound } = await Audio.Sound.createAsync({ uri: will.audio_url }, { shouldPlay: true });
+      (audioSoundRef as any)[1](sound);
+      sound.setOnPlaybackStatusUpdate((st) => {
+        if (!st.isLoaded) return;
+        if (st.didJustFinish) setIsPlayingAudio(false);
+      });
+    } catch (e) {
+      console.error(e);
+      setIsPlayingAudio(false);
+      Alert.alert('Error', 'Could not play audio.');
+    }
   };
 
   const sections = [
@@ -474,6 +518,26 @@ export default function ReviewWillScreen() {
                   <Text style={styles.transcriptText} numberOfLines={3}>
                     {will.transcript}
                   </Text>
+                </View>
+              )}
+              {(will.audio_url || will.video_url) && (
+                <View style={styles.mediaRow}>
+                  {will.audio_url && (
+                    <Pressable style={styles.mediaBtn} onPress={playAudio} disabled={isPlayingAudio}>
+                      <Ionicons name="play-circle-outline" size={20} color={colors.foreground} />
+                      <Text style={styles.mediaBtnText}>{isPlayingAudio ? 'Playing…' : 'Play audio'}</Text>
+                    </Pressable>
+                  )}
+                  {will.video_url && (
+                    <View style={styles.videoBox}>
+                      <Video
+                        source={{ uri: will.video_url }}
+                        style={{ width: '100%', height: '100%' }}
+                        useNativeControls
+                        resizeMode={ResizeMode.CONTAIN}
+                      />
+                    </View>
+                  )}
                 </View>
               )}
             </View>
