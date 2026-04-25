@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { typography, radius } from '@/lib/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
+import { Screen } from '@/components/ui/Screen';
 
 type Recipient = { id: string; full_name: string; email: string | null; phone: string | null; relationship: string | null; is_verified: boolean; image_url?: string | null };
 
@@ -16,9 +17,9 @@ const RELATIONSHIPS = ['Spouse', 'Child', 'Sibling', 'Parent', 'Friend', 'Charit
 export default function RecipientsScreen() {
   const { colors } = useAppTheme();
   const styles = useThemedStyles((colors) => StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.background },
+    container: { flex: 1, backgroundColor: 'transparent' },
     content: { padding: 16, paddingBottom: 100 },
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'transparent' },
     header: { marginBottom: 16 },
     backBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
     backText: { color: colors.gold, fontWeight: '600', marginLeft: 8 },
@@ -257,18 +258,21 @@ export default function RecipientsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.gold} />
-      </View>
+      <Screen>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.gold} />
+        </View>
+      </Screen>
     );
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchRecipients(); }} tintColor={colors.gold} />}
-    >
+    <Screen>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchRecipients(); }} tintColor={colors.gold} />}
+      >
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={handleBack} style={styles.backBtn}>
@@ -472,6 +476,7 @@ export default function RecipientsScreen() {
           </View>
         </View>
       )}
-    </ScrollView>
+      </ScrollView>
+    </Screen>
   );
 }

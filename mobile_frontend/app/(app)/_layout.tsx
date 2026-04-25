@@ -2,8 +2,9 @@ import { useEffect } from 'react';
 import { useThemedStyles } from '@/lib/useThemedStyles';
 import { Stack, useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/contexts/ThemeContext';
+import { UniqueLoading } from '@/components/ui/UniqueLoading';
 
 export default function AppLayout() {
   const { colors } = useAppTheme();
@@ -14,7 +15,6 @@ export default function AppLayout() {
       alignItems: 'center',
       backgroundColor: colors.background,
     },
-    loadingText: { color: colors.mutedForeground, marginTop: 12 },
   }));
 
   const { user, loading, isAdmin, adminLoading } = useAuth();
@@ -36,8 +36,7 @@ export default function AppLayout() {
   if (loading || adminLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.gold} />
-        <Text style={styles.loadingText}>Loading...</Text>
+        <UniqueLoading />
       </View>
     );
   }

@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { typography, radius } from '@/lib/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
+import { Screen } from '@/components/ui/Screen';
 
 interface Will {
   id: string;
@@ -59,9 +60,9 @@ interface Allocation {
 export default function ReviewWillScreen() {
   const { colors } = useAppTheme();
   const styles = useThemedStyles((colors) => StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.background },
+    container: { flex: 1, backgroundColor: 'transparent' },
     content: { padding: 20, paddingBottom: 40 },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
+    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'transparent' },
   
     backButton: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 24 },
     backText: { color: colors.gold, fontWeight: '600' },
@@ -408,9 +409,11 @@ export default function ReviewWillScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.gold} />
-      </View>
+      <Screen>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.gold} />
+        </View>
+      </Screen>
     );
   }
 
@@ -572,6 +575,7 @@ export default function ReviewWillScreen() {
   );
 
   return (
+    <Screen>
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}>
       {/* Back Button */}
       <Pressable
@@ -670,5 +674,6 @@ export default function ReviewWillScreen() {
         </Text>
       </View>
     </ScrollView>
+    </Screen>
   );
 }

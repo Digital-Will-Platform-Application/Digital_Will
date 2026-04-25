@@ -16,15 +16,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { typography, radius } from '@/lib/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
+import { Screen } from '@/components/ui/Screen';
 
 type Asset = { id: string; name: string; category: string; estimated_value: number | null };
 type Recipient = { id: string; full_name: string; email: string | null; relationship: string | null };
 export default function AssignRecipientsScreen() {
   const { colors } = useAppTheme();
   const styles = useThemedStyles((colors) => StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.background },
+    container: { flex: 1, backgroundColor: 'transparent' },
     content: { padding: 20, paddingBottom: 40 },
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'transparent' },
     backRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20 },
     backText: { color: colors.gold, fontWeight: '600' },
     header: { marginBottom: 24 },
@@ -158,14 +159,17 @@ export default function AssignRecipientsScreen() {
 
   if (loading || !asset) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.gold} />
-      </View>
+      <Screen>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.gold} />
+        </View>
+      </Screen>
     );
   }
 
   if (recipients.length === 0) {
     return (
+      <Screen>
       <View style={styles.container}>
         <Pressable style={styles.backRow} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={20} color={colors.gold} />
@@ -180,11 +184,13 @@ export default function AssignRecipientsScreen() {
           </Pressable>
         </View>
       </View>
+      </Screen>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}>
+    <Screen>
+      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}>
       <Pressable style={styles.backRow} onPress={() => router.back()}>
         <Ionicons name="arrow-back" size={20} color={colors.gold} />
         <Text style={styles.backText}>Back</Text>
@@ -230,6 +236,7 @@ export default function AssignRecipientsScreen() {
           </>
         )}
       </Pressable>
-    </ScrollView>
+      </ScrollView>
+    </Screen>
   );
 }

@@ -484,6 +484,39 @@ export const backendApi = {
     return result as unknown as { success: boolean; message?: string };
   },
 
+  async listAssetAllocations(userId: number): Promise<{
+    success: boolean;
+    data?: AssetAllocationRow[];
+    message?: string;
+  }> {
+    const response = await fetch(joinUrl(`/api/assets/allocations?user_id=${userId}`), {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const result = await parseJsonSafe(response);
+    if (!response.ok) {
+      throw new Error((result.message as string) || 'Failed to load allocations');
+    }
+    return result as unknown as { success: boolean; data?: AssetAllocationRow[]; message?: string };
+  },
+
+  async saveAssetAllocations(body: {
+    user_id: number;
+    asset_id: number;
+    recipient_ids: number[];
+  }): Promise<{ success: boolean; message?: string; data?: AssetAllocationRow[] }> {
+    const response = await fetch(joinUrl('/api/assets/allocations'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const result = await parseJsonSafe(response);
+    if (!response.ok) {
+      throw new Error((result.message as string) || 'Failed to save allocations');
+    }
+    return result as unknown as { success: boolean; message?: string; data?: AssetAllocationRow[] };
+  },
+
   async getRecipientsByEmail(userEmail: string): Promise<{
     success: boolean;
     data?: RecipientRow[];

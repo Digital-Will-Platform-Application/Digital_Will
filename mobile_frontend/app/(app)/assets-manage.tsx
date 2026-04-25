@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { typography, radius } from '@/lib/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
+import { Screen } from '@/components/ui/Screen';
 
 const USD_TO_INR = 83;
 function formatINR(value: number | null): string {
@@ -52,9 +53,9 @@ type Allocation = { id: string; asset_id: string; recipient_id: string; recipien
 export default function AssetsManageScreen() {
   const { colors } = useAppTheme();
   const styles = useThemedStyles((colors) => StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.background },
+    container: { flex: 1, backgroundColor: 'transparent' },
     content: { padding: 20, paddingBottom: 48 },
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'transparent' },
     backWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20 },
     back: { color: colors.mutedForeground, fontWeight: '500' },
     progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
@@ -248,18 +249,21 @@ export default function AssetsManageScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.gold} />
-      </View>
+      <Screen>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.gold} />
+        </View>
+      </Screen>
     );
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchData(); }} tintColor={colors.gold} />}
-    >
+    <Screen>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchData(); }} tintColor={colors.gold} />}
+      >
       <Pressable onPress={() => router.back()} style={styles.backWrap}>
         <Ionicons name="arrow-back" size={20} color={colors.mutedForeground} />
         <Text style={styles.back}>{isFlowMode ? 'Back to Method Selection' : 'Back to Dashboard'}</Text>
@@ -383,6 +387,7 @@ export default function AssetsManageScreen() {
           </Pressable>
         </View>
       )}
-    </ScrollView>
+      </ScrollView>
+    </Screen>
   );
 }

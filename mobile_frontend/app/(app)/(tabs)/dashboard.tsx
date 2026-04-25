@@ -9,6 +9,7 @@ import { backendApi } from '@/lib/backendApi';
 import { Ionicons } from '@expo/vector-icons';
 import { typography, radius } from '@/lib/theme';
 import { useAppTheme } from '@/lib/theme';
+import { Screen } from '@/components/ui/Screen';
 
 type Will = { id: string; title: string; status: string; type: string; updated_at: string; content?: string | null; transcript?: string | null; notes?: string | null };
 type Asset = { id: string; name: string; category: string; estimated_value: number | null };
@@ -99,9 +100,9 @@ function hasWillContent(will: Will): boolean {
 export default function DashboardScreen() {
   const { colors, isDark, toggleLightDark } = useAppTheme();
   const styles = useThemedStyles((colors) => StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.background },
+    container: { flex: 1, backgroundColor: 'transparent' },
     content: { padding: 16, paddingBottom: 32 },
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'transparent' },
     headerTopRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -534,8 +535,15 @@ export default function DashboardScreen() {
           relationship: r.relationship ?? null,
         })),
       );
-      // Asset allocations are not exposed on the Express API yet; keep empty (analytics section adapts).
-      setAssetAllocations([]);
+      const allocRows = await backendApi.listAssetAllocations(userId).then((r) => r.data ?? []).catch(() => []);
+      setAssetAllocations(
+        allocRows.map((a) => ({
+          id: String(a.id),
+          asset_id: String(a.asset_id),
+          recipient_id: String(a.recipient_id),
+          allocation_percentage: Number(a.allocation_percentage) || 0,
+        })),
+      );
     } catch (e) {
       console.error(e);
     } finally {
@@ -554,9 +562,11 @@ export default function DashboardScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.gold} />
-      </View>
+      <Screen>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.gold} />
+        </View>
+      </Screen>
     );
   }
 
@@ -617,6 +627,7 @@ export default function DashboardScreen() {
   const totalAllocatedValue = recipientValueData.reduce((s, i) => s + i.value, 0);
 
   return (
+    <Screen>
     <ScrollView
       style={styles.container}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]}
@@ -1074,5 +1085,6 @@ export default function DashboardScreen() {
         </ScrollView>
       </View>
     </ScrollView>
+    </Screen>
   );
 }
