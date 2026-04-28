@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useThemedStyles } from '@/lib/useThemedStyles';
 import { Stack, useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
-import { View, StyleSheet } from 'react-native';
+import { Platform, View, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { UniqueLoading } from '@/components/ui/UniqueLoading';
 
@@ -23,8 +23,10 @@ export default function AppLayout() {
   useEffect(() => {
     if (loading || adminLoading) return;
     if (!user) {
-      // Leave the app stack for public home (go-home clears stack then lands on `/`).
-      queueMicrotask(() => router.replace('/go-home'));
+      // Leave the app stack.
+      // On mobile, go straight to login (avoid rendering web-style landing page).
+      // On web, keep the marketing home.
+      queueMicrotask(() => router.replace(Platform.OS === 'web' ? '/go-home' : '/login'));
       return;
     }
     if (isAdmin) {

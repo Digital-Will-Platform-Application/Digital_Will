@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useThemedStyles } from '@/lib/useThemedStyles';
 import { useRouter } from 'expo-router';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { Platform, View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/contexts/ThemeContext';
 
 /**
@@ -23,7 +23,7 @@ export default function GoHomeScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/');
+    router.replace(Platform.OS === 'web' ? '/' : '/login');
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
 
