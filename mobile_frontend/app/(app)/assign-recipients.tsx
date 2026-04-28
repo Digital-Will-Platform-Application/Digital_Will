@@ -122,10 +122,18 @@ export default function AssignRecipientsScreen() {
             relationship: r.relationship,
           })),
         );
-        setSelectedIds(new Set());
+        const userId = parseInt(user.id, 10);
+        const allocs = Number.isNaN(userId)
+          ? []
+          : await backendApi.listAssetAllocations(userId).then((r) => r.data ?? []).catch(() => []);
+        const pre = new Set<string>();
+        for (const a of allocs as any[]) {
+          if (String(a.asset_id) === String(aid)) pre.add(String(a.recipient_id));
+        }
+        setSelectedIds(pre);
       } catch (e) {
         console.error(e);
-        Alert.alert('Error', 'Failed to load data');
+        Alert.alert('Error', 'Failed to load asset/recipients. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -148,10 +156,14 @@ export default function AssignRecipientsScreen() {
     }
     setSaving(true);
     try {
-      Alert.alert(
-        'Use the web app',
-        'Saving asset-to-recipient allocations is not in the mobile API yet. Assign recipients from the web dashboard; your data uses the same backend.',
-      );
+      const userId = parseInt(user.id, 10);
+      const aid = parseInt(String(assetId), 10);
+      if (Number.isNaN(userId) || Number.isNaN(aid)) throw new Error('Invalid session');
+      const recipientIds = Array.from(selectedIds).map((id) => parseInt(id, 10)).filter((n) => Number.isFinite(n));
+      const res = await backendApi.saveAssetAllocations({ user_id: userId, asset_id: aid, recipient_ids: recipientIds });
+      if (!res.success) throw new Error(res.message || 'Failed to save allocations');
+      Alert.alert('Success', 'Recipients assigned successfully.');
+      router.back();
     } finally {
       setSaving(false);
     }

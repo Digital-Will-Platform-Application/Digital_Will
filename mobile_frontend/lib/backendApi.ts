@@ -179,6 +179,14 @@ export interface AssetRow {
   currency?: string | null;
 }
 
+export interface AssetAllocationRow {
+  id?: number;
+  asset_id: number;
+  recipient_id: number;
+  allocation_percentage: number;
+  recipient?: { full_name?: string };
+}
+
 export interface RecipientRow {
   id: number;
   user_id: number;
@@ -336,7 +344,7 @@ export const backendApi = {
     }
     const response = await fetch(joinUrl(`/api/wills/list?${q}`), {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await withAuthHeaders({ 'Content-Type': 'application/json' }),
     });
     const result = await parseJsonSafe(response);
     if (!response.ok) {
@@ -357,7 +365,7 @@ export const backendApi = {
     }
     const response = await fetch(joinUrl(`/api/wills/${willId}?${q}`), {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await withAuthHeaders({ 'Content-Type': 'application/json' }),
     });
     const result = await parseJsonSafe(response);
     if (!response.ok) {
@@ -378,7 +386,7 @@ export const backendApi = {
     }
     const response = await fetch(joinUrl(`/api/wills/${willId}?${q}`), {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await withAuthHeaders({ 'Content-Type': 'application/json' }),
     });
     const result = await parseJsonSafe(response);
     if (!response.ok) {
@@ -398,7 +406,7 @@ export const backendApi = {
   }): Promise<{ success: boolean; message?: string; data?: WillRow }> {
     const response = await fetch(joinUrl('/api/wills/save'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await withAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(data),
     });
     const result = await parseJsonSafe(response);
@@ -416,7 +424,7 @@ export const backendApi = {
   }): Promise<Record<string, unknown>> {
     const response = await fetch(joinUrl('/api/wills/finalize'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await withAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(data),
     });
     const result = await parseJsonSafe(response);
@@ -429,7 +437,7 @@ export const backendApi = {
   async getUserAssets(userId: number): Promise<{ success: boolean; data?: AssetRow[]; message?: string }> {
     const response = await fetch(joinUrl(`/api/assets/user/${userId}`), {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await withAuthHeaders({ 'Content-Type': 'application/json' }),
     });
     const result = await parseJsonSafe(response);
     if (!response.ok) {
@@ -449,7 +457,7 @@ export const backendApi = {
   }): Promise<{ success: boolean; message?: string; data?: AssetRow }> {
     const response = await fetch(joinUrl('/api/assets/add'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await withAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(data),
     });
     const result = await parseJsonSafe(response);
@@ -462,7 +470,7 @@ export const backendApi = {
   async getAssetById(assetId: number): Promise<{ success: boolean; data?: AssetRow; message?: string }> {
     const response = await fetch(joinUrl(`/api/assets/${assetId}`), {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await withAuthHeaders({ 'Content-Type': 'application/json' }),
     });
     const result = await parseJsonSafe(response);
     if (!response.ok) {
@@ -474,7 +482,7 @@ export const backendApi = {
   async deleteAsset(assetId: number, userId: number): Promise<{ success: boolean; message?: string }> {
     const response = await fetch(joinUrl(`/api/assets/${assetId}`), {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await withAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ user_id: userId }),
     });
     const result = await parseJsonSafe(response);
@@ -489,15 +497,23 @@ export const backendApi = {
     data?: AssetAllocationRow[];
     message?: string;
   }> {
-    const response = await fetch(joinUrl(`/api/assets/allocations?user_id=${userId}`), {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const result = await parseJsonSafe(response);
-    if (!response.ok) {
-      throw new Error((result.message as string) || 'Failed to load allocations');
+    // Backend exposes allocations in the assets list response (`GET /api/assets/user/:userId`).
+    // Flatten that shape into a single allocations array for analytics and assignment screens.
+    const assetsRes = await backendApi.getUserAssets(userId);
+    const rows = (assetsRes.data ?? []) as Array<AssetRow & { allocations?: Array<{ recipient_id: number; allocation_percentage: number }> }>;
+    const flat: AssetAllocationRow[] = [];
+    for (const a of rows) {
+      const list = Array.isArray((a as any).allocations) ? (a as any).allocations : [];
+      for (const al of list) {
+        if (!al) continue;
+        flat.push({
+          asset_id: Number(a.id),
+          recipient_id: Number(al.recipient_id),
+          allocation_percentage: Number(al.allocation_percentage) || 0,
+        });
+      }
     }
-    return result as unknown as { success: boolean; data?: AssetAllocationRow[]; message?: string };
+    return { success: true, data: flat };
   },
 
   async saveAssetAllocations(body: {
@@ -505,10 +521,23 @@ export const backendApi = {
     asset_id: number;
     recipient_ids: number[];
   }): Promise<{ success: boolean; message?: string; data?: AssetAllocationRow[] }> {
-    const response = await fetch(joinUrl('/api/assets/allocations'), {
+    const recipients = Array.isArray(body.recipient_ids) ? body.recipient_ids.filter((n) => Number.isFinite(n)) : [];
+    if (recipients.length === 0) {
+      return { success: false, message: 'No recipients selected' };
+    }
+
+    // Equal distribution among selected recipients (first recipient gets remainder)
+    const pct = Math.floor(100 / recipients.length);
+    const remainder = 100 - pct * recipients.length;
+    const allocations = recipients.map((rid, idx) => ({
+      recipient_id: rid,
+      allocation_percentage: idx === 0 ? pct + remainder : pct,
+    }));
+
+    const response = await fetch(joinUrl(`/api/assets/${body.asset_id}/allocations`), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      headers: await withAuthHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ user_id: body.user_id, allocations }),
     });
     const result = await parseJsonSafe(response);
     if (!response.ok) {
@@ -524,7 +553,7 @@ export const backendApi = {
   }> {
     const response = await fetch(
       joinUrl(`/api/recipients/user-email/${encodeURIComponent(userEmail.trim().toLowerCase())}`),
-      { method: 'GET', headers: { 'Content-Type': 'application/json' } },
+      { method: 'GET', headers: await withAuthHeaders({ 'Content-Type': 'application/json' }) },
     );
     const result = await parseJsonSafe(response);
     if (!response.ok) {
@@ -543,7 +572,7 @@ export const backendApi = {
   }): Promise<{ success: boolean; message?: string; data?: RecipientRow }> {
     const response = await fetch(joinUrl('/api/recipients/add'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await withAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(data),
     });
     const result = await parseJsonSafe(response);
@@ -566,7 +595,7 @@ export const backendApi = {
   ): Promise<{ success: boolean; message?: string }> {
     const response = await fetch(joinUrl(`/api/recipients/${recipientId}`), {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await withAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(data),
     });
     const result = await parseJsonSafe(response);
@@ -582,7 +611,7 @@ export const backendApi = {
   ): Promise<{ success: boolean; message?: string }> {
     const response = await fetch(joinUrl(`/api/recipients/${recipientId}`), {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await withAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(data),
     });
     const result = await parseJsonSafe(response);
@@ -610,7 +639,11 @@ export const backendApi = {
     formData.append('user_email', data.user_email);
     if (data.staging) formData.append('staging', 'true');
 
-    const response = await fetch(joinUrl('/api/upload/audio'), { method: 'POST', body: formData });
+    const response = await fetch(joinUrl('/api/upload/audio'), {
+      method: 'POST',
+      headers: await withAuthHeaders(),
+      body: formData,
+    });
     const result = await parseJsonSafe(response);
     if (!response.ok) {
       throw new Error((result.message as string) || 'Failed to upload audio');
@@ -636,7 +669,11 @@ export const backendApi = {
     formData.append('user_email', data.user_email);
     if (data.staging) formData.append('staging', 'true');
 
-    const response = await fetch(joinUrl('/api/upload/video'), { method: 'POST', body: formData });
+    const response = await fetch(joinUrl('/api/upload/video'), {
+      method: 'POST',
+      headers: await withAuthHeaders(),
+      body: formData,
+    });
     const result = await parseJsonSafe(response);
     if (!response.ok) {
       throw new Error((result.message as string) || 'Failed to upload video');
@@ -764,7 +801,7 @@ export const backendApi = {
   },
 
   async checkUploadStatus(): Promise<Record<string, unknown>> {
-    const response = await fetch(joinUrl('/api/upload/status'), { method: 'GET' });
+    const response = await fetch(joinUrl('/api/upload/status'), { method: 'GET', headers: await withAuthHeaders() });
     return parseJsonSafe(response);
   },
 
