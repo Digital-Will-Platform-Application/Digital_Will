@@ -8,7 +8,11 @@ import { useAppTheme } from '@/contexts/ThemeContext';
 import { MobileHeader } from '@/components/MobileHeader';
 import { Footer } from '@/components/Footer';
 
-export default function HomeScreen() {
+// On mobile we want a native boot → login flow (no marketing landing page).
+// Keep this screen available as a non-default export if needed for web later.
+export { default } from './index.native';
+
+export function HomeScreen() {
   const { colors } = useAppTheme();
   const styles = useThemedStyles((colors) => StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
